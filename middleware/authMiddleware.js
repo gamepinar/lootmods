@@ -4,15 +4,14 @@ module.exports = function (req, res, next) {
     const token = req.header('x-auth-token');
 
     if (!token) {
-        return res.status(401).json({ error: "No hay token, permiso denegado" });
+        return res.status(401).json({ error: "No hay token, permiso denegado." });
     }
 
     try {
-        const descifrado = jwt.verify(token, process.env.JWT_SECRET);
-
-        req.usuario = descifrado;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Esto incluye .id y .rol
         next();
-    } catch (error) {
-        res.status(401).json({ error: "El token no es válido" });
+    } catch (err) {
+        res.status(401).json({ error: "Token no es válido." });
     }
 };

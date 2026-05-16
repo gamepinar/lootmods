@@ -1,0 +1,11 @@
+const mongoose = require('mongoose');
+
+const DonationSchema = new mongoose.Schema({
+    nombre: { type: String, default: 'Anónimo' },
+    monto: { type: Number, required: true },
+    moneda: { type: String, required: true },
+    fecha: { type: Date, default: Date.now },
+    estado: { type: String, default: 'pendiente', enum: ['pendiente', 'completado'] }
+});
+
+module.exports = mongoose.model('Donation', DonationSchema);

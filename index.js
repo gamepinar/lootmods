@@ -3,9 +3,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
-const { apiLimiter } = require('./middleware/rateLimit');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
 
 const app = express();
+
+// 1. Conexión a Base de Datos (Mover arriba)
+mongoose.connect(process.env.MONGO_URI, {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+})
+.then(() => console.log('✅ Conectado a MongoDB Atlas'))
+.catch(err => console.error('❌ Error de conexión:', err));
 
 const origenesPermitidos = [
     'https://gamepin.top',
@@ -14,7 +22,18 @@ const origenesPermitidos = [
     'http://localhost:3000'
 ];
 
-const mongoSanitize = require('express-mongo-sanitize');
+const sanitizeObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return;
+    Object.keys(obj).forEach(key => {
+        if (/^\$/.test(key) || key.includes('.')) {
+            delete obj[key];
+        } else if (obj[key] && typeof obj[key] === 'object') {
+            sanitizeObject(obj[key]);
+        } else if (typeof obj[key] === 'string') {
+            obj[key] = obj[key].replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '');
+        }
+    });
+};
 
 app.use(helmet());
 app.use(cors({
@@ -27,39 +46,21 @@ app.use(cors({
     },
     credentials: true
 }));
+
 app.use(express.json());
 
-// Sanitización de datos contra inyecciones NoSQL
-app.use(mongoSanitize());
-
-// Middleware para prevenir scripts básicos (XSS) en los inputs
 app.use((req, res, next) => {
-    if (req.body) {
-        for (let key in req.body) {
-            if (typeof req.body[key] === 'string') {
-                req.body[key] = req.body[key].replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "");
-            }
-        }
-    }
+    sanitizeObject(req.body);
+    sanitizeObject(req.params);
     next();
 });
 
 app.use('/api/', apiLimiter);
-
-mongoose.connect(process.env.MONGO_URI, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-})
-    .then(() => console.log('Conectado a MongoDB Atlas'))
-    .catch(err => console.error('Error de conexión:', err));
-
-const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
-
-app.use('/api/', apiLimiter);
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/content', require('./routes/content'));
+app.use('/api/donations', require('./routes/donations'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
+    console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
 });
