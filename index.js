@@ -39,8 +39,13 @@ app.use(cors({
 
 app.use(express.json());
 
-// Prevención de inyecciones NoSQL optimizada
-app.use(mongoSanitize());
+// Prevención de inyecciones NoSQL optimizada (compatible con Express 5)
+app.use((req, res, next) => {
+    if (req.body) mongoSanitize.sanitize(req.body, { replaceWith: '_' });
+    if (req.params) mongoSanitize.sanitize(req.params, { replaceWith: '_' });
+    if (req.query) mongoSanitize.sanitize(req.query, { replaceWith: '_' });
+    next();
+});
 
 app.use('/api/', apiLimiter);
 app.use('/api/auth', authLimiter, require('./routes/auth'));
@@ -49,7 +54,7 @@ app.use('/api/donations', require('./routes/donations'));
 
 // Servir Frontend en Producción (Cloud Run)
 app.use(express.static(path.join(__dirname, 'frontend/dist')));
-app.get('*', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
 });
 const PORT = process.env.PORT || 3000;
