@@ -28,7 +28,7 @@ const origenesPermitidos = [
 app.use(helmet());
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || origenesPermitidos.includes(origin)) {
+        if (!origin || origenesPermitidos.includes(origin) || origin.endsWith('.vercel.app')) {
             callback(null, true);
         } else {
             callback(new Error('No permitido por CORS'));
