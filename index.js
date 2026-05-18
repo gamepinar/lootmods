@@ -3,8 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const path = require('path');
 const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
-
 const app = express();
 
 // 1. Conexión a Base de Datos (Mover arriba)
@@ -22,18 +23,7 @@ const origenesPermitidos = [
     'http://localhost:3000'
 ];
 
-const sanitizeObject = (obj) => {
-    if (!obj || typeof obj !== 'object') return;
-    Object.keys(obj).forEach(key => {
-        if (/^\$/.test(key) || key.includes('.')) {
-            delete obj[key];
-        } else if (obj[key] && typeof obj[key] === 'object') {
-            sanitizeObject(obj[key]);
-        } else if (typeof obj[key] === 'string') {
-            obj[key] = obj[key].replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '');
-        }
-    });
-};
+
 
 app.use(helmet());
 app.use(cors({
@@ -49,17 +39,19 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use((req, res, next) => {
-    sanitizeObject(req.body);
-    sanitizeObject(req.params);
-    next();
-});
+// Prevención de inyecciones NoSQL optimizada
+app.use(mongoSanitize());
 
 app.use('/api/', apiLimiter);
 app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/donations', require('./routes/donations'));
 
+// Servir Frontend en Producción (Cloud Run)
+app.use(express.static(path.join(__dirname, 'frontend/dist')));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
