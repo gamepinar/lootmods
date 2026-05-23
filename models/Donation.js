@@ -6,7 +6,7 @@ const DonationSchema = new mongoose.Schema({
     monto: { type: Number, required: true },
     moneda: { type: String, required: true },
     fecha: { type: Date, default: Date.now },
-    estado: { type: String, default: 'pendiente', enum: ['pendiente', 'completado'] }
+    estado: { type: String, default: 'pendiente', enum: ['pendiente', 'completado', 'rechazado'] }
 });
 
 module.exports = mongoose.model('Donation', DonationSchema);

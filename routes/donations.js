@@ -10,7 +10,7 @@ const adminMiddleware = require('../middleware/adminMiddleware');
 // Obtener donaciones del usuario logueado
 router.get('/mis-donaciones', authMiddleware, async (req, res) => {
     try {
-        const donations = await Donation.find({ userId: req.user.id }).sort({ fecha: -1 });
+        const donations = await Donation.find({ userId: req.user.id, estado: 'completado' }).sort({ fecha: -1 });
         res.json(donations);
     } catch (err) {
         res.status(500).json({ error: 'Error al obtener tus donaciones' });
@@ -67,6 +67,20 @@ router.put('/:id/completar', authMiddleware, adminMiddleware, async (req, res) =
         res.json(donation);
     } catch (err) {
         res.status(500).json({ error: 'Error al actualizar donación' });
+    }
+});
+
+// [ADMIN] Rechazar donación
+router.put('/:id/rechazar', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const donation = await Donation.findByIdAndUpdate(
+            req.params.id, 
+            { estado: 'rechazado' }, 
+            { new: true }
+        );
+        res.json(donation);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al rechazar donación' });
     }
 });
 

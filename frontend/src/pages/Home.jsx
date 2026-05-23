@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoot } from '../context/LootContext';
 
+
 function Home() {
   const { homeContent, donations, fetchHomeContent, fetchLatestDonations, setDonations } = useLoot();
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +14,7 @@ function Home() {
   const [qrData, setQrData] = useState({ visible: false, img: '', name: '' });
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+ 
 
   const donationConfig = {
     USD: { 
@@ -57,9 +59,11 @@ function Home() {
     }
 
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['x-auth-token'] = token;
       const res = await fetch(`${API_URL}/donations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ 
           nombre: donorName.trim(), 
           monto: selectedAmount, 

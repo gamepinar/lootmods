@@ -312,6 +312,20 @@ function PendingDonations({ API_URL }) {
     } catch (err) { console.error(err); }
   };
 
+  const handleReject = async (id) => {
+    if (!window.confirm('¿Estás seguro de rechazar esta donación?')) return;
+    try {
+      const res = await fetch(`${API_URL}/donations/${id}/rechazar`, {
+        method: 'PUT',
+        headers: { 'x-auth-token': token }
+      });
+      if (res.ok) {
+        alert('Donación rechazada.');
+        fetchPendientes();
+      }
+    } catch (err) { console.error(err); }
+  };
+
   if (pendientes.length === 0) return <p style={{opacity: 0.5}}>No hay donaciones pendientes por revisar.</p>;
 
   return (
@@ -322,7 +336,10 @@ function PendingDonations({ API_URL }) {
             <h4 style={{margin: 0}}>{don.nombre}</h4>
             <span style={{fontSize: '0.9rem', color: '#10b981', fontWeight: 'bold'}}>{don.moneda} {don.monto}</span>
           </div>
-          <button onClick={() => handleApprove(don._id)} className="mini-btn" style={{background: '#10b981', color: 'black', fontWeight: 'bold'}}>APROBAR ✅</button>
+          <div style={{display: 'flex', gap: '0.5rem'}}>
+            <button onClick={() => handleApprove(don._id)} className="mini-btn" style={{background: '#10b981', color: 'black', fontWeight: 'bold'}}>APROBAR</button>
+            <button onClick={() => handleReject(don._id)} className="mini-btn" style={{background: '#ff4444', color: 'white', fontWeight: 'bold'}}>RECHAZAR</button>
+          </div>
         </div>
       ))}
     </div>
