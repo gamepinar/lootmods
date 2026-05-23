@@ -5,6 +5,7 @@ const { sanitizeHTML } = require('../utils/sanitize');
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
 
 // Obtener donaciones del usuario logueado
 router.get('/mis-donaciones', authMiddleware, async (req, res) => {
@@ -46,7 +47,7 @@ router.post('/', async (req, res) => {
 });
 
 // [ADMIN] Obtener donaciones pendientes
-router.get('/admin/pendientes', authMiddleware, async (req, res) => {
+router.get('/admin/pendientes', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const pendientes = await Donation.find({ estado: 'pendiente' }).sort({ fecha: -1 });
         res.json(pendientes);
@@ -56,7 +57,7 @@ router.get('/admin/pendientes', authMiddleware, async (req, res) => {
 });
 
 // [ADMIN] Marcar donación como completada
-router.put('/:id/completar', authMiddleware, async (req, res) => {
+router.put('/:id/completar', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const donation = await Donation.findByIdAndUpdate(
             req.params.id, 
