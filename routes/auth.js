@@ -24,7 +24,7 @@ router.post('/register', async (req, res) => {
         await user.save();
 
         const token = jwt.sign({ id: user._id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { nombre: user.nombre, email: user.email, rol: user.rol } });
+        res.json({ token, user: { id: user._id, nombre: user.nombre, email: user.email, rol: user.rol } });
     } catch (error) {
         res.status(500).json({ error: "Error en el servidor" });
     }

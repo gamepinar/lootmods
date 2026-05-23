@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function ModDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [item, setItem] = useState(null);
   const [currency, setCurrency] = useState('USD');
-  const [donorName, setDonorName] = useState('');
+  const [donorName, setDonorName] = useState(user?.nombre || '');
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [qrData, setQrData] = useState({ visible: false, img: '', name: '' });
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -42,9 +44,32 @@ function ModDetails() {
       .catch(err => console.error(err));
   }, [id]);
 
+  useEffect(() => {
+    if (user?.nombre) {
+      setDonorName(user.nombre);
+    }
+  }, [user]);
+
+  const handleDownloadClick = async () => {
+    if (token) {
+      try {
+        await fetch(`${API_URL}/content/${id}/download`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token
+          },
+          body: JSON.stringify({ downloadUrl: item.downloadUrl })
+        });
+      } catch (err) {
+        console.error('Error tracking download:', err);
+      }
+    }
+  };
+
   const handlePayment = async (method) => {
     if (!donorName.trim()) {
-      alert('Por favor, ingresa tu nombre para aparecer en el Muro de Honor.');
+      alert('Por favor, ingresa tu nombre para aparecer en el Muro de Honor. / Please enter your name to appear on the Honor Wall.');
       return;
     }
     if (!selectedAmount) {
@@ -52,9 +77,13 @@ function ModDetails() {
       return;
     }
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
       const res = await fetch(`${API_URL}/donations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ nombre: donorName.trim(), monto: selectedAmount, moneda: currency, metodo: method.name })
       });
       const resData = await res.json();
@@ -80,7 +109,7 @@ function ModDetails() {
       }
 
       alert(`¡Gracias ${donorName}! Redirigiendo a ${method.name}...`);
-      setDonorName('');
+      setDonorName(user?.nombre || '');
       setSelectedAmount(null);
     } catch (err) { 
       console.error(err);
@@ -98,7 +127,7 @@ function ModDetails() {
             <h2 style={{color: 'var(--accent-cyan)'}}>{qrData.name}</h2>
             <p style={{fontSize: '0.9rem', opacity: 0.8, marginTop: '1rem'}}>
               Escanea el código para realizar tu apoyo de <b>{currency} {selectedAmount}</b>.
-              <br />Una vez verificado, aparecerás en el Muro de Honor.
+              <br />Una vez verificado, aparecerás en el Muro de Honor. / Once verified, you will appear on the Honor Wall.
             </p>
             <img src={qrData.img} alt="QR Code" className="qr-image" />
             <button 
@@ -191,7 +220,14 @@ function ModDetails() {
                   <span style={{fontWeight: '700'}}>{item.developer || 'LootMods'}</span>
                </div>
             </div>
-            <a href={item.downloadUrl} target="_blank" rel="noopener noreferrer" className="download-btn glow-purple" style={{padding: '0.8rem 2rem', fontSize: '0.9rem'}}>
+            <a 
+              href={item.downloadUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="download-btn glow-purple" 
+              style={{padding: '0.8rem 2rem', fontSize: '0.9rem'}}
+              onClick={handleDownloadClick}
+            >
               Download (ClaroDrive)
             </a>
           </div>

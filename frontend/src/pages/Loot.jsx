@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLoot } from '../context/LootContext';
 
 function Loot() {
-  const [content, setContent] = useState([]);
+  const { fullContent, fetchFullContent } = useLoot();
   const [searchTerm, setSearchTerm] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [donorName, setDonorName] = useState('');
@@ -36,15 +37,12 @@ function Loot() {
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/content`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setContent(data); })
-      .catch(err => console.error(err));
+    fetchFullContent();
   }, []);
 
   const handlePayment = async (method) => {
     if (!donorName.trim()) {
-      alert('Por favor, ingresa tu nombre para aparecer en el Muro de Honor.');
+      alert('Por favor, ingresa tu nombre para aparecer en el Muro de Honor. / Please enter your name to appear on the Honor Wall.');
       return;
     }
     if (!selectedAmount) {
@@ -82,7 +80,7 @@ function Loot() {
     }
   };
 
-  const filtered = content.filter(i => i.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filtered = (fullContent || []).filter(i => i.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="loot-container" style={{padding: '2rem 8%'}}>
@@ -92,7 +90,7 @@ function Loot() {
             <h2 style={{color: 'var(--accent-cyan)'}}>{qrData.name}</h2>
             <p style={{fontSize: '0.9rem', opacity: 0.8, marginTop: '1rem'}}>
               Escanea el código para realizar tu apoyo de <b>{currency} {selectedAmount}</b>.
-              <br />Una vez verificado, aparecerás en el Muro de Honor.
+              <br />Una vez verificado, aparecerás en el Muro de Honor. / Once verified, you will appear on the Honor Wall.
             </p>
             <img src={qrData.img} alt="QR Code" className="qr-image" />
             <button 

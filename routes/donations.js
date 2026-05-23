@@ -1,16 +1,41 @@
 const express = require('express');
 const router = express.Router();
 const Donation = require('../models/Donation');
+const { sanitizeHTML } = require('../utils/sanitize');
+const jwt = require('jsonwebtoken');
 
 const authMiddleware = require('../middleware/authMiddleware');
+
+// Obtener donaciones del usuario logueado
+router.get('/mis-donaciones', authMiddleware, async (req, res) => {
+    try {
+        const donations = await Donation.find({ userId: req.user.id }).sort({ fecha: -1 });
+        res.json(donations);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener tus donaciones' });
+    }
+});
 
 // Guardar una nueva donación
 router.post('/', async (req, res) => {
     try {
         const { nombre, monto, moneda, metodo } = req.body;
         
+        const sanitizedNombre = sanitizeHTML(nombre || 'Anónimo');
+        
+        let userId = null;
+        const token = req.header('x-auth-token');
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                userId = decoded.id;
+            } catch (err) {
+                // Ignorar token inválido
+            }
+        }
+        
         // Guardamos la intención de donación (por defecto es 'pendiente')
-        const nuevaDonacion = new Donation({ nombre, monto, moneda });
+        const nuevaDonacion = new Donation({ userId, nombre: sanitizedNombre, monto, moneda });
         await nuevaDonacion.save();
 
         // Devolvemos éxito normal para que el frontend muestre el QR

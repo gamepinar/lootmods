@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLoot } from '../context/LootContext';
 
 function Home() {
-  const [content, setContent] = useState([]);
-  const [donations, setDonations] = useState([]);
+  const { homeContent, donations, fetchHomeContent, fetchLatestDonations, setDonations } = useLoot();
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
   const [currency, setCurrency] = useState('USD');
@@ -42,20 +42,13 @@ function Home() {
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/content`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setContent(data.slice(0, 5)); })
-      .catch(err => console.error('Error productos:', err));
-
-    fetch(`${API_URL}/donations/latest`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setDonations(data); })
-      .catch(err => console.error('Error donadores:', err));
+    fetchHomeContent();
+    fetchLatestDonations();
   }, []);
 
   const handlePayment = async (method) => {
     if (!donorName.trim()) {
-      alert('Por favor, ingresa tu nombre para aparecer en el Muro de Honor.');
+      alert('Por favor, ingresa tu nombre para aparecer en el Muro de Honor. / Please enter your name to appear on the Honor Wall.');
       return;
     }
     if (!selectedAmount) {
@@ -94,17 +87,14 @@ function Home() {
       setDonorName('');
       setSelectedAmount(null);
       
-      // Recargar donadores
-      const latestRes = await fetch(`${API_URL}/donations/latest`);
-      const latestData = await latestRes.json();
-      if (Array.isArray(latestData)) setDonations(latestData);
+      await fetchLatestDonations(true);
     } catch (err) { 
       console.error(err);
       alert(`Ocurrió un error: ${err.message}`);
     }
   };
 
-  const filteredContent = content.filter(item => {
+  const filteredContent = (homeContent || []).filter(item => {
     const matchesSearch = item.nombre.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = category === 'All' || item.categoria === category;
     return matchesSearch && matchesCategory;
@@ -160,7 +150,7 @@ function Home() {
             <h2 style={{color: 'var(--accent-cyan)'}}>{qrData.name}</h2>
             <p style={{fontSize: '0.9rem', opacity: 0.8, marginTop: '1rem'}}>
               Escanea el código para realizar tu apoyo de <b>{currency} {selectedAmount}</b>.
-              <br />Una vez verificado, aparecerás en el Muro de Honor.
+              <br />Una vez verificado, aparecerás en el Muro de Honor. / Once verified, you will appear on the Honor Wall.
             </p>
             <img src={qrData.img} alt="QR Code" className="qr-image" />
             <button 

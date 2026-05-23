@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { useLoot } from '../context/LootContext';
 
 function Admin() {
+  const { invalidateCache } = useLoot();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [content, setContent] = useState([]);
@@ -103,6 +105,7 @@ function Admin() {
         body: JSON.stringify(form)
       });
       if (res.ok) {
+        invalidateCache();
         setMessage(editingId ? '✅ ¡Actualizado con éxito!' : '✅ ¡Publicado con éxito!');
         setForm({ nombre: '', descripcion: '', imagenUrl: '', downloadUrl: '', categoria: 'Mod', developer: '', instrucciones: '', seguridad: '✅ Virus Free' });
         setEditingId(null);
@@ -136,6 +139,7 @@ function Admin() {
         headers: { 'x-auth-token': token }
       });
       if (res.ok) {
+        invalidateCache();
         fetchContent();
         setMessage('🗑️ Eliminado correctamente');
       }
@@ -278,6 +282,7 @@ function Admin() {
 }
 
 function PendingDonations({ API_URL }) {
+  const { invalidateCache } = useLoot();
   const [pendientes, setPendientes] = useState([]);
   const token = localStorage.getItem('adminToken');
 
@@ -300,6 +305,7 @@ function PendingDonations({ API_URL }) {
         headers: { 'x-auth-token': token }
       });
       if (res.ok) {
+        invalidateCache();
         alert('✅ Donación aprobada y visible en el muro.');
         fetchPendientes();
       }

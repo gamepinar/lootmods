@@ -1,15 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const Content = require('../models/content');
+const Download = require('../models/Download');
 const auth = require('../middleware/authMiddleware');
 const admin = require('../middleware/adminMiddleware');
+const { sanitizeHTML } = require('../utils/sanitize');
 
 router.get('/', async (req, res) => {
     try {
-        const content = await Content.find().sort({ fechaCreacion: -1 }).select('-valoraciones');
+        const limit = parseInt(req.query.limit) || 0;
+        const select = req.query.select || '-valoraciones';
+        const content = await Content.find()
+            .sort({ fechaCreacion: -1 })
+            .select(select)
+            .limit(limit);
         res.json(content);
     } catch (error) {
         res.status(500).json({ error: "Error al obtener el contenido", detalle: error.message });
+    }
+});
+
+// Obtener las descargas del usuario logueado
+router.get('/mis-descargas', auth, async (req, res) => {
+    try {
+        const descargas = await Download.find({ userId: req.user.id }).sort({ fecha: -1 });
+        res.json(descargas);
+    } catch (err) {
+        res.status(500).json({ error: 'Error al obtener tus descargas' });
     }
 });
 
@@ -39,10 +56,12 @@ router.post('/:id/comment', auth, async (req, res) => {
         const item = await Content.findById(req.params.id);
         if (!item) return res.status(404).json({ error: "Contenido no encontrado." });
 
+        const sanitizedComentario = sanitizeHTML(comentario);
+
         item.valoraciones.push({ 
             usuarioId: req.user.id,
             nombre: req.user.nombre || "Usuario",
-            comentario, 
+            comentario: sanitizedComentario, 
             estrellas 
         });
 
@@ -84,6 +103,12 @@ router.delete('/:id/comment/:commentId', auth, async (req, res) => {
 
 router.post('/', auth, admin, async (req, res) => {
     try {
+        if (req.body.nombre) req.body.nombre = sanitizeHTML(req.body.nombre);
+        if (req.body.descripcion) req.body.descripcion = sanitizeHTML(req.body.descripcion);
+        if (req.body.instrucciones) req.body.instrucciones = sanitizeHTML(req.body.instrucciones);
+        if (req.body.developer) req.body.developer = sanitizeHTML(req.body.developer);
+        if (req.body.seguridad) req.body.seguridad = sanitizeHTML(req.body.seguridad);
+
         const nuevoContenido = new Content(req.body);
         await nuevoContenido.save();
         res.status(201).json({ mensaje: "¡Contenido subido con éxito!", item: nuevoContenido });
@@ -94,6 +119,12 @@ router.post('/', auth, admin, async (req, res) => {
 
 router.put('/:id', auth, admin, async (req, res) => {
     try {
+        if (req.body.nombre) req.body.nombre = sanitizeHTML(req.body.nombre);
+        if (req.body.descripcion) req.body.descripcion = sanitizeHTML(req.body.descripcion);
+        if (req.body.instrucciones) req.body.instrucciones = sanitizeHTML(req.body.instrucciones);
+        if (req.body.developer) req.body.developer = sanitizeHTML(req.body.developer);
+        if (req.body.seguridad) req.body.seguridad = sanitizeHTML(req.body.seguridad);
+
         const contenidoActualizado = await Content.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.json({ mensaje: "Actualizado exitosamente!", item: contenidoActualizado });
     } catch (error) {
@@ -101,12 +132,30 @@ router.put('/:id', auth, admin, async (req, res) => {
     }
 });
 
-router.delete('/:id', auth, admin, async (req, res) => {
+// Registrar una descarga de un mod/juego
+router.post('/:id/download', auth, async (req, res) => {
     try {
-        await Content.findByIdAndDelete(req.params.id);
-        res.json({ mensaje: "¡Eliminado de forma permanente!" });
+        const item = await Content.findById(req.params.id);
+        if (!item) return res.status(404).json({ error: "Contenido no encontrado." });
+
+        const { downloadUrl } = req.body;
+        if (!downloadUrl) {
+            return res.status(400).json({ error: "Falta la URL de descarga." });
+        }
+
+        // Crear registro de descarga
+        const nuevaDescarga = new Download({
+            userId: req.user.id,
+            contentId: item._id,
+            contentNombre: item.nombre,
+            contentImagen: item.imagen,
+            downloadUrl
+        });
+
+        await nuevaDescarga.save();
+        res.status(201).json({ mensaje: "Descarga registrada con éxito", descarga: nuevaDescarga });
     } catch (error) {
-        res.status(500).json({ error: "Error al eliminar." });
+        res.status(500).json({ error: "Error al registrar la descarga." });
     }
 });
 

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const DonationSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     nombre: { type: String, default: 'Anónimo' },
     monto: { type: Number, required: true },
     moneda: { type: String, required: true },

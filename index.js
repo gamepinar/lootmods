@@ -23,12 +23,18 @@ const origenesPermitidos = [
     'http://localhost:3000'
 ];
 
-
+const vercelPattern = /^https:\/\/lootmods(?:-[a-z0-9-]+)?\.vercel\.app$/;
+const runPattern = /^https:\/\/lootmods-.*\.run\.app$/;
 
 app.use(helmet());
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || origenesPermitidos.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.run.app')) {
+        if (
+            !origin || 
+            origenesPermitidos.includes(origin) || 
+            vercelPattern.test(origin) || 
+            runPattern.test(origin)
+        ) {
             callback(null, true);
         } else {
             callback(new Error('No permitido por CORS'));
