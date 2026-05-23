@@ -23,7 +23,7 @@ router.post('/register', async (req, res) => {
 
         await user.save();
 
-        const token = jwt.sign({ id: user._id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, rol: user.rol, nombre: user.nombre }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: { id: user._id, nombre: user.nombre, email: user.email, rol: user.rol } });
     } catch (error) {
         res.status(500).json({ error: "Error en el servidor" });
@@ -40,7 +40,7 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Credenciales inválidas" });
 
-        const token = jwt.sign({ id: user._id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user._id, rol: user.rol, nombre: user.nombre }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: { id: user._id, nombre: user.nombre, email: user.email, rol: user.rol } });
     } catch (error) {
         res.status(500).json({ error: "Error en el servidor" });

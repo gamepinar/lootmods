@@ -148,7 +148,7 @@ router.post('/:id/download', auth, async (req, res) => {
             userId: req.user.id,
             contentId: item._id,
             contentNombre: item.nombre,
-            contentImagen: item.imagen,
+            contentImagen: item.imagenUrl,
             downloadUrl
         });
 
