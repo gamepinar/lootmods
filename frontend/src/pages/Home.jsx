@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoot } from '../context/LootContext';
+import { useAuth } from '../context/AuthContext';
 
 
 function Home() {
   const { homeContent, donations, fetchHomeContent, fetchLatestDonations, setDonations } = useLoot();
+  const { user, token } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
   const [currency, setCurrency] = useState('USD');
