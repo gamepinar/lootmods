@@ -9,6 +9,7 @@ function Loot() {
   const [currency, setCurrency] = useState('USD');
   const [donorName, setDonorName] = useState('');
   const [selectedAmount, setSelectedAmount] = useState(null);
+  const [selectedMethod, setSelectedMethod] = useState(null);
   const [qrData, setQrData] = useState({ visible: false, img: '', name: '' });
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -16,7 +17,7 @@ function Loot() {
 
   const donationConfig = {
     USD: { 
-      symbol: '$', vals: [1, 5, 10, 20, 50],
+      symbol: '$', vals: [1, 3, 5, 10, 20],
       methods: [
         { id: 'binance', name: 'Binance Pay', color: '#F3BA2F' },
         { id: 'paypal', name: 'PayPal', color: '#0070BA' }
@@ -27,13 +28,6 @@ function Loot() {
       methods: [
         { id: 'qr', name: 'QR Pago', color: '#009EE3' },
         { id: 'mp', name: 'Mercado Pago', color: '#00B1EA' }
-      ]
-    },
-    BRL: { 
-      symbol: 'R$', vals: [2, 5, 10, 20, 50, 100],
-      methods: [
-        { id: 'pix', name: 'Pix', color: '#32BCAD' },
-        { id: 'paypal', name: 'PayPal', color: '#0070BA' }
       ]
     }
   };
@@ -72,6 +66,11 @@ function Loot() {
       }
       if (method.id === 'qr' || method.id === 'mp') {
         setQrData({ visible: true, img: '/qr.png', name: 'Mercado Pago / Transferencia' });
+        return;
+      }
+
+      if (currency === 'USD' && method.id === 'paypal') {
+        window.open('https://paypal.me/pagosdeplata', '_blank');
         return;
       }
 
@@ -115,56 +114,72 @@ function Loot() {
         type="text" 
         placeholder="Buscar en el arsenal..." 
         className="search-input glass"
-        style={{marginBottom: '2rem'}}
+        style={{marginBottom: '1rem'}}
         onChange={e => setSearchTerm(e.target.value)}
       />
 
-      <section className="donation-mini-box glass glow-cyan" style={{marginBottom: '4rem'}}>
+      <section className="donation-mini-box glass glow-cyan" style={{marginBottom: '2rem'}}>
         <div className="currency-selector">
            {Object.keys(donationConfig).map(curr => (
-             <button key={curr} onClick={() => { setCurrency(curr); setSelectedAmount(null); }} className={currency === curr ? 'active' : ''}>{curr}</button>
+             <button key={curr} onClick={() => { setCurrency(curr); setSelectedAmount(null); setSelectedMethod(null); }} className={currency === curr ? 'active' : ''}>{curr}</button>
            ))}
         </div>
         <h4>Ayúdanos a mantener vivo LOOTMODS / Help us keep LOOTMODS alive</h4>
-        <div className="donation-grid-mini">
-          {donationConfig[currency].vals.map(val => (
-            <button 
-              key={val} 
-              onClick={() => setSelectedAmount(val)} 
-              className="mini-btn" 
-              style={{cursor: 'pointer', border: selectedAmount === val ? '2px solid #10b981' : '1px solid var(--glass-border)', color: '#10b981'}}
-            >
-              {donationConfig[currency].symbol}{val.toLocaleString()}
-            </button>
-          ))}
-        </div>
-        <div style={{marginTop: '1.2rem', padding: '0 15%'}}>
-           <input 
-            type="text" 
-            placeholder="Name (for the Honor Wall)" 
-            className="search-input glass" 
-            style={{fontSize: '0.8rem', padding: '0.5rem 1rem', textAlign: 'center'}}
-            value={donorName}
-            onChange={(e) => setDonorName(e.target.value)}
-           />
+        <div style={{marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0 5%'}}>
+          <small style={{fontSize: '0.7rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center'}}>1. Método de pago / Payment method</small>
+          <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center'}}>
+             {donationConfig[currency].methods.map(method => (
+               <button 
+                key={method.id} 
+                onClick={() => setSelectedMethod(method)}
+                className="mini-btn"
+                style={{fontSize: '0.7rem', border: selectedMethod?.id === method.id ? `2px solid ${method.color}` : `1px solid ${method.color}88`, background: 'rgba(255,255,255,0.02)', padding: '0.4rem 1rem'}}
+               >
+                 <span style={{color: method.color, opacity: 1, fontSize: '0.75rem'}}>{method.name}</span>
+               </button>
+             ))}
+          </div>
         </div>
 
-        {selectedAmount && (
-          <div style={{marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '0 10%'}}>
-            <small style={{fontSize: '0.7rem', opacity: 0.6, textTransform: 'uppercase'}}>Método de apoyo / Support method</small>
-            <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center'}}>
-               {donationConfig[currency].methods.map(method => (
-                 <button 
-                  key={method.id} 
-                  onClick={() => handlePayment(method)}
-                  className="mini-btn"
-                  style={{fontSize: '0.7rem', border: `1px solid ${method.color}88`, background: 'rgba(255,255,255,0.02)', padding: '0.4rem 1rem'}}
-                 >
-                   <span style={{color: method.color, opacity: 1, fontSize: '0.75rem'}}>{method.name}</span>
-                 </button>
-               ))}
+        {selectedMethod && (
+          <>
+            <div style={{marginTop: '0.8rem', textAlign: 'center'}}>
+              <small style={{fontSize: '0.7rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '1px'}}>2. Monto / Amount</small>
             </div>
-          </div>
+            <div className="donation-grid-mini" style={{marginTop: '0.3rem'}}>
+              {donationConfig[currency].vals.map(val => (
+                <button 
+                  key={val} 
+                  onClick={() => setSelectedAmount(val)} 
+                  className="mini-btn" 
+                  style={{cursor: 'pointer', border: selectedAmount === val ? '2px solid #10b981' : '1px solid var(--glass-border)', color: '#10b981'}}
+                >
+                  {donationConfig[currency].symbol}{val.toLocaleString()}
+                </button>
+              ))}
+            </div>
+
+            <div style={{marginTop: '0.8rem', padding: '0 15%'}}>
+               <input 
+                type="text" 
+                placeholder="Name (for the Honor Wall)" 
+                className="search-input glass" 
+                style={{fontSize: '0.8rem', padding: '0.4rem 1rem', textAlign: 'center'}}
+                value={donorName}
+                onChange={(e) => setDonorName(e.target.value)}
+               />
+            </div>
+
+            <div style={{marginTop: '1rem', textAlign: 'center', paddingBottom: '0.5rem'}}>
+              <button 
+                className="download-btn glow-cyan" 
+                onClick={() => handlePayment(selectedMethod)}
+                style={{padding: '0.6rem 2rem', fontSize: '0.85rem'}}
+              >
+                APOYAR / SUPPORT
+              </button>
+            </div>
+          </>
         )}
       </section>
 

@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const path = require('path');
 const { apiLimiter, authLimiter } = require('./middleware/rateLimit');
+const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
 const app = express();
 
 // 1. Conexión a Base de Datos (Mover arriba)
@@ -53,8 +54,8 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/api/', apiLimiter);
-app.use('/api/auth', authLimiter, require('./routes/auth'));
+if (!isLocal) app.use('/api/', apiLimiter);
+app.use('/api/auth', ...(isLocal ? [] : [authLimiter]), require('./routes/auth'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/donations', require('./routes/donations'));
 
