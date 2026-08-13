@@ -25,9 +25,15 @@ function App() {
         <Link to="/" className="logo">LOOTMODS</Link>
         <div className="nav-links">
           <Link to="/loot" className="nav-link">Loot</Link>
-          <Link to={getAccountLink()} className="nav-link account-icon" title={user ? `Perfil de ${user.nombre}` : 'Mi Cuenta'}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </Link>
+          {!user ? (
+            <Link to="/auth" className="download-btn glow-purple" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              Registrarse
+            </Link>
+          ) : (
+            <Link to={getAccountLink()} className="nav-link account-icon" title={`Perfil de ${user.nombre}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </Link>
+          )}
         </div>
       </nav>
 

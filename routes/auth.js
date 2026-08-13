@@ -33,12 +33,19 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log("LOGIN REQUEST BODY:", req.body);
 
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: "Credenciales inválidas" });
+        if (!user) {
+            console.log("USER NOT FOUND FOR EMAIL:", email);
+            return res.status(400).json({ error: "Credenciales inválidas" });
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: "Credenciales inválidas" });
+        if (!isMatch) {
+            console.log("PASSWORD MISMATCH FOR USER:", email);
+            return res.status(400).json({ error: "Credenciales inválidas" });
+        }
 
         const token = jwt.sign({ id: user._id, rol: user.rol, nombre: user.nombre }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: { id: user._id, nombre: user.nombre, email: user.email, rol: user.rol } });
